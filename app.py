@@ -4,101 +4,75 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 
-# --- PAGE CONFIGURATION ---
-[cite_start]st.set_page_config(page_title="Regressio - Linear Regression Demo", layout="wide") [cite: 42, 44]
-
-# [cite_start]--- 1. DATA HANDLER CLASS --- [cite: 10, 11]
+# --- 1. Data Handler (LLD Section 2) ---
 class DataHandler:
     @staticmethod
     def load_data():
-        [cite_start]"""Generates simple synthetic dataset for educational purposes.""" [cite: 41, 49]
+        [cite_start]"""Load or generate the dataset[cite: 10, 41]."""
+        # [cite_start]Generating a simple 1D dataset as per Technical Specs [cite: 49]
         np.random.seed(42)
-        X = 2 * np.random.rand(100, 1)
-        y = 4 + 3 * X + np.random.randn(100, 1)
-        df = pd.DataFrame(np.hstack([X, y]), columns=['X', 'y'])
-        return df
+        X = np.random.rand(100, 1) * 10 
+        y = 2.5 * X + np.random.randn(100, 1) * 2
+        return X, y
 
-# [cite_start]--- 2. REGRESSION MODEL CLASS --- [cite: 10, 104]
+# --- 2. Regression Model (LLD Section 2) ---
 class RegressionModel:
     def __init__(self):
-        [cite_start]self.model = LinearRegression() [cite: 6, 112]
-        self.slope = 0
-        self.intercept = 0
-        self.r2 = 0
-
+        [cite_start]self.model = LinearRegression() # [cite: 71, 112]
+    
     def train(self, X, y):
-        [cite_start]"""Fits the linear regression model and stores parameters.""" [cite: 10, 41]
-        self.model.fit(X, y)
-        self.slope = self.model.coef_[0][0]
-        self.intercept = self.model.intercept_[0]
-        self.r2 = self.model.score(X, y)
+        [cite_start]self.model.fit(X, y) # [cite: 19, 75]
+        
+    def predict(self, x_input):
+        [cite_start]return self.model.predict([[x_input]]) # [cite: 21, 79]
 
-    def predict(self, x_value):
-        [cite_start]"""Predicts Y based on a single X input.""" [cite: 10, 41]
-        return self.model.predict([[x_value]])[0][0]
-
-# [cite_start]--- 3. VISUALIZER CLASS --- [cite: 10, 104]
+# --- 3. Visualizer (LLD Section 2) ---
 class Visualizer:
     @staticmethod
-    def plot_regression(df, model, user_x=None, user_y=None):
-        [cite_start]"""Renders scatter plot and regression line.""" [cite: 41, 58]
+    def plot_all(X, y, model, x_input=None, y_pred=None):
         fig, ax = plt.subplots()
-        ax.scatter(df['X'], df['y'], color='blue', label='Data Points', alpha=0.5)
+        [cite_start]ax.scatter(X, y, color='blue', label='Data Points') # [cite: 41]
         
-        # Regression line
-        x_range = np.linspace(df['X'].min(), df['X'].max(), 100).reshape(-1, 1)
-        y_range = model.model.predict(x_range)
-        [cite_start]ax.plot(x_range, y_range, color='red', label='Regression Line') [cite: 41, 53]
+        # [cite_start]Regression Line [cite: 41, 53]
+        x_range = np.linspace(X.min(), X.max(), 100).reshape(-1, 1)
+        ax.plot(x_range, model.model.predict(x_range), color='red', label='Regression Line')
         
-        # Highlight user prediction
-        if user_x is not None:
-            [cite_start]ax.scatter(user_x, user_y, color='green', s=100, edgecolors='black', label='Your Prediction') [cite: 41, 60]
+        # [cite_start]Highlight User Prediction [cite: 60]
+        if x_input is not None:
+            ax.scatter(x_input, y_pred, color='green', s=100, label='Your Prediction')
             
-        [cite_start]ax.set_xlabel('Study Hours (X)') [cite: 59]
-        [cite_start]ax.set_ylabel('Test Score (Y)') [cite: 59]
+        ax.set_xlabel('X (Input)')
+        ax.set_ylabel('Y (Target)')
         ax.legend()
         return fig
 
-# [cite_start]--- 4. MAIN APP ORCHESTRATION --- [cite: 10, 14]
+# --- 4. Streamlit App Script (LLD Section 2) ---
 def main():
-    [cite_start]st.title("Regressio - Linear Regression Web Demo") [cite: 32, 77]
-    [cite_start]st.markdown("An educational tool to understand the relationship between variables.") [cite: 35, 99]
+    [cite_start]st.title("Regressio - Linear Regression Web Demo") # [cite: 77]
+    [cite_start]st.write("An interactive demo for learning linear regression concepts.") # [cite: 35, 42]
 
-    # Initialize data and model
+    # Initialize Components
     dh = DataHandler()
-    df = dh.load_data()
-    X = df[['X']]
-    y = df['y']
+    X, y = dh.load_data()
     
     rm = RegressionModel()
     rm.train(X, y)
-
-    # [cite_start]Sidebar / User Input [cite: 54, 104]
-    st.sidebar.header("User Input")
-    user_input = st.sidebar.number_input("Enter X value to predict Y:", 
-                                         min_value=0.0, max_value=2.0, value=1.0, step=0.1)
-
-    # [cite_start]Predictions [cite: 106]
-    prediction = rm.predict(user_input)
-
-    # [cite_start]Layout Columns [cite: 51, 61]
-    col1, col2 = st.columns([2, 1])
-
-    with col1:
-        [cite_start]st.subheader("Data Visualization") [cite: 8, 37]
-        fig = Visualizer.plot_regression(df, rm, user_input, prediction)
-        [cite_start]st.pyplot(fig) [cite: 78, 112]
-
-    with col2:
-        [cite_start]st.subheader("Results & Parameters") [cite: 41, 56]
-        [cite_start]st.success(f"**Predicted Y Value:** {prediction:.2f}") [cite: 55, 80]
-        
-        [cite_start]st.write(f"**Slope (Coefficient):** {rm.slope:.2f}") [cite: 41, 84]
-        [cite_start]st.write(f"**Intercept:** {rm.intercept:.2f}") [cite: 41, 84]
-        [cite_start]st.write(f"**R² Score:** {rm.r2:.2f}") [cite: 41, 84]
-        
-        [cite_start]with st.expander("Educational Note"): [cite: 42, 57]
-            st.write("Linear regression finds the 'best-fit' line by minimizing the sum of squared differences between observed and predicted values.")
+    
+    # [cite_start]UI Layout [cite: 51-55]
+    [cite_start]x_input = st.number_input("Enter X value:", value=5.0) # [cite: 79]
+    y_pred = rm.predict(x_input)[0][0]
+    
+    [cite_start]st.write(f"### Predicted Y: {y_pred:.2f}") # [cite: 80]
+    
+    # [cite_start]Visualization [cite: 106]
+    fig = Visualizer.plot_all(X, y, rm, x_input, y_pred)
+    [cite_start]st.pyplot(fig) # [cite: 78]
+    
+    # [cite_start]Model Parameters [cite: 41, 84]
+    st.subheader("Model Parameters")
+    st.write(f"Slope: {rm.model.coef_[0][0]:.2f}")
+    st.write(f"Intercept: {rm.model.intercept_[0]:.2f}")
+    st.write(f"R² Score: {rm.model.score(X, y):.2f}")
 
 if __name__ == "__main__":
-    [cite_start]main() [cite: 15]
+    main()
