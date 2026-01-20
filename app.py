@@ -4,75 +4,88 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 
-# --- 1. Data Handler (LLD Section 2) ---
+# --- 1. Data Handler Class (LLD 2.0) ---
 class DataHandler:
     @staticmethod
     def load_data():
-        [cite_start]"""Load or generate the dataset[cite: 10, 41]."""
-        # [cite_start]Generating a simple 1D dataset as per Technical Specs [cite: 49]
+        """Load or generate the dataset."""
+        # Simple 1D synthetic dataset as per PRD FR-1
         np.random.seed(42)
-        X = np.random.rand(100, 1) * 10 
+        X = np.random.rand(100, 1) * 10
         y = 2.5 * X + np.random.randn(100, 1) * 2
         return X, y
 
-# --- 2. Regression Model (LLD Section 2) ---
+# --- 2. Regression Model Class (LLD 2.0) ---
 class RegressionModel:
     def __init__(self):
-        [cite_start]self.model = LinearRegression() # [cite: 71, 112]
+        self.model = LinearRegression()
     
     def train(self, X, y):
-        [cite_start]self.model.fit(X, y) # [cite: 19, 75]
+        """Fits the model using scikit-learn."""
+        self.model.fit(X, y)
         
     def predict(self, x_input):
-        [cite_start]return self.model.predict([[x_input]]) # [cite: 21, 79]
+        """Returns the prediction for a given X."""
+        return self.model.predict([[x_input]])
 
-# --- 3. Visualizer (LLD Section 2) ---
+# --- 3. Visualizer Class (LLD 2.0) ---
 class Visualizer:
     @staticmethod
-    def plot_all(X, y, model, x_input=None, y_pred=None):
+    def plot_all(X, y, rm, x_input=None, y_pred=None):
+        """Generates scatter plot and regression line."""
         fig, ax = plt.subplots()
-        [cite_start]ax.scatter(X, y, color='blue', label='Data Points') # [cite: 41]
+        ax.scatter(X, y, color='blue', label='Actual Data', alpha=0.6)
         
-        # [cite_start]Regression Line [cite: 41, 53]
+        # Regression Line calculation
         x_range = np.linspace(X.min(), X.max(), 100).reshape(-1, 1)
-        ax.plot(x_range, model.model.predict(x_range), color='red', label='Regression Line')
+        y_range = rm.model.predict(x_range)
+        ax.plot(x_range, y_range, color='red', linewidth=2, label='Regression Line')
         
-        # [cite_start]Highlight User Prediction [cite: 60]
+        # Highlight User Prediction
         if x_input is not None:
-            ax.scatter(x_input, y_pred, color='green', s=100, label='Your Prediction')
+            ax.scatter(x_input, y_pred, color='green', s=150, edgecolors='black', label='Your Prediction')
             
-        ax.set_xlabel('X (Input)')
-        ax.set_ylabel('Y (Target)')
+        ax.set_xlabel('X Value')
+        ax.set_ylabel('Y Value')
         ax.legend()
         return fig
 
-# --- 4. Streamlit App Script (LLD Section 2) ---
+# --- 4. Main App Orchestration ---
 def main():
-    [cite_start]st.title("Regressio - Linear Regression Web Demo") # [cite: 77]
-    [cite_start]st.write("An interactive demo for learning linear regression concepts.") # [cite: 35, 42]
+    st.set_page_config(page_title="Regressio Demo")
+    st.title("Regressio - Linear Regression Web Demo")
+    st.write("This tool demonstrates simple linear regression concepts.")
 
-    # Initialize Components
+    # Data & Model Setup
     dh = DataHandler()
     X, y = dh.load_data()
     
     rm = RegressionModel()
     rm.train(X, y)
     
-    # [cite_start]UI Layout [cite: 51-55]
-    [cite_start]x_input = st.number_input("Enter X value:", value=5.0) # [cite: 79]
-    y_pred = rm.predict(x_input)[0][0]
+    # Sidebar for User Interaction (PRD FR-5)
+    st.sidebar.header("Input Parameters")
+    x_val = st.sidebar.number_input("Enter an X value to predict Y:", value=5.0)
     
-    [cite_start]st.write(f"### Predicted Y: {y_pred:.2f}") # [cite: 80]
+    # Prediction (PRD FR-6)
+    prediction = rm.predict(x_val)[0][0]
     
-    # [cite_start]Visualization [cite: 106]
-    fig = Visualizer.plot_all(X, y, rm, x_input, y_pred)
-    [cite_start]st.pyplot(fig) # [cite: 78]
+    # UI Layout
+    col1, col2 = st.columns([2, 1])
     
-    # [cite_start]Model Parameters [cite: 41, 84]
-    st.subheader("Model Parameters")
-    st.write(f"Slope: {rm.model.coef_[0][0]:.2f}")
-    st.write(f"Intercept: {rm.model.intercept_[0]:.2f}")
-    st.write(f"R² Score: {rm.model.score(X, y):.2f}")
+    with col1:
+        st.subheader("Data Visualization")
+        fig = Visualizer.plot_all(X, y, rm, x_val, prediction)
+        st.pyplot(fig)
+    
+    with col2:
+        st.subheader("Prediction Result")
+        st.metric(label="Predicted Y", value=f"{prediction:.2f}")
+        
+        st.subheader("Model Parameters")
+        st.write(f"**Slope (m):** {rm.model.coef_[0][0]:.2f}")
+        st.write(f"**Intercept (b):** {rm.model.intercept_[0]:.2f}")
+        st.write(f"**R² Score:** {rm.model.score(X, y):.2f}")
 
 if __name__ == "__main__":
     main()
