@@ -1,67 +1,104 @@
-
 import streamlit as st
 import pandas as pd
-import joblib
-import os
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
 
-# 1. Load the pre-trained Linear Regression model
-# Ensure the model file exists in the same directory or provide the correct path
-try:
-    model = joblib.load('linear_regression_model.pkl')
-    # print("Model loaded successfully.") # This would print to the console where Streamlit is run
-except FileNotFoundError:
-    st.error("Error: 'linear_regression_model.pkl' not found. Please ensure the model is saved.")
-    st.stop() # Stop the app if model is not found
+# --- PAGE CONFIGURATION ---
+[cite_start]st.set_page_config(page_title="Regressio - Linear Regression Demo", layout="wide") [cite: 42, 44]
 
-# 2. Load model performance metrics
-try:
-    with open('model_metrics.txt', 'r') as f:
-        metrics = f.readlines()
-    r_squared = metrics[0].split(': ')[1].strip()
-    mae = metrics[1].split(': ')[1].strip()
-except FileNotFoundError:
-    r_squared = "N/A"
-    mae = "N/A"
-    st.warning("Warning: 'model_metrics.txt' not found. Model performance metrics will not be displayed.")
+# [cite_start]--- 1. DATA HANDLER CLASS --- [cite: 10, 11]
+class DataHandler:
+    @staticmethod
+    def load_data():
+        [cite_start]"""Generates simple synthetic dataset for educational purposes.""" [cite: 41, 49]
+        np.random.seed(42)
+        X = 2 * np.random.rand(100, 1)
+        y = 4 + 3 * X + np.random.randn(100, 1)
+        df = pd.DataFrame(np.hstack([X, y]), columns=['X', 'y'])
+        return df
 
-# Set up the Streamlit application title and description
-st.title("Linear Regression Model Predictor")
-st.write("Enter the study hours to predict the test score.")
+# [cite_start]--- 2. REGRESSION MODEL CLASS --- [cite: 10, 104]
+class RegressionModel:
+    def __init__(self):
+        [cite_start]self.model = LinearRegression() [cite: 6, 112]
+        self.slope = 0
+        self.intercept = 0
+        self.r2 = 0
 
-# Create an input widget for 'Study_Hours'
-study_hours = st.number_input(
-    label='Enter Study Hours',
-    min_value=0.0,
-    max_value=24.0,
-    value=10.0,
-    step=0.1
-)
+    def train(self, X, y):
+        [cite_start]"""Fits the linear regression model and stores parameters.""" [cite: 10, 41]
+        self.model.fit(X, y)
+        self.slope = self.model.coef_[0][0]
+        self.intercept = self.model.intercept_[0]
+        self.r2 = self.model.score(X, y)
 
-# Create a button for making predictions
-if st.button('Predict Test Score'):
-    # Reshape the input for the model
-    input_data = pd.DataFrame([[study_hours]], columns=['Study_Hours'])
+    def predict(self, x_value):
+        [cite_start]"""Predicts Y based on a single X input.""" [cite: 10, 41]
+        return self.model.predict([[x_value]])[0][0]
+
+# [cite_start]--- 3. VISUALIZER CLASS --- [cite: 10, 104]
+class Visualizer:
+    @staticmethod
+    def plot_regression(df, model, user_x=None, user_y=None):
+        [cite_start]"""Renders scatter plot and regression line.""" [cite: 41, 58]
+        fig, ax = plt.subplots()
+        ax.scatter(df['X'], df['y'], color='blue', label='Data Points', alpha=0.5)
+        
+        # Regression line
+        x_range = np.linspace(df['X'].min(), df['X'].max(), 100).reshape(-1, 1)
+        y_range = model.model.predict(x_range)
+        [cite_start]ax.plot(x_range, y_range, color='red', label='Regression Line') [cite: 41, 53]
+        
+        # Highlight user prediction
+        if user_x is not None:
+            [cite_start]ax.scatter(user_x, user_y, color='green', s=100, edgecolors='black', label='Your Prediction') [cite: 41, 60]
+            
+        [cite_start]ax.set_xlabel('Study Hours (X)') [cite: 59]
+        [cite_start]ax.set_ylabel('Test Score (Y)') [cite: 59]
+        ax.legend()
+        return fig
+
+# [cite_start]--- 4. MAIN APP ORCHESTRATION --- [cite: 10, 14]
+def main():
+    [cite_start]st.title("Regressio - Linear Regression Web Demo") [cite: 32, 77]
+    [cite_start]st.markdown("An educational tool to understand the relationship between variables.") [cite: 35, 99]
+
+    # Initialize data and model
+    dh = DataHandler()
+    df = dh.load_data()
+    X = df[['X']]
+    y = df['y']
     
-    # Make prediction
-    predicted_score = model.predict(input_data)[0]
-    
-    # Display the predicted 'Test_Score'
-    st.success(f"Predicted Test Score: {predicted_score:.2f}")
+    rm = RegressionModel()
+    rm.train(X, y)
 
-# Display model performance metrics
-st.subheader("Model Performance Metrics (on Test Set)")
-st.metric(label="R-squared", value=r_squared)
-st.metric(label="Mean Absolute Error (MAE)", value=mae)
+    # [cite_start]Sidebar / User Input [cite: 54, 104]
+    st.sidebar.header("User Input")
+    user_input = st.sidebar.number_input("Enter X value to predict Y:", 
+                                         min_value=0.0, max_value=2.0, value=1.0, step=0.1)
 
-# Add a feature to allow users to download the original data.csv file
-st.subheader("Download Data")
-if os.path.exists('data.csv'):
-    with open('data.csv', 'rb') as f:
-        st.download_button(
-            label="Download Original data.csv",
-            data=f,
-            file_name="data.csv",
-            mime="text/csv"
-        )
-else:
-    st.warning("Original 'data.csv' not found for download.")
+    # [cite_start]Predictions [cite: 106]
+    prediction = rm.predict(user_input)
+
+    # [cite_start]Layout Columns [cite: 51, 61]
+    col1, col2 = st.columns([2, 1])
+
+    with col1:
+        [cite_start]st.subheader("Data Visualization") [cite: 8, 37]
+        fig = Visualizer.plot_regression(df, rm, user_input, prediction)
+        [cite_start]st.pyplot(fig) [cite: 78, 112]
+
+    with col2:
+        [cite_start]st.subheader("Results & Parameters") [cite: 41, 56]
+        [cite_start]st.success(f"**Predicted Y Value:** {prediction:.2f}") [cite: 55, 80]
+        
+        [cite_start]st.write(f"**Slope (Coefficient):** {rm.slope:.2f}") [cite: 41, 84]
+        [cite_start]st.write(f"**Intercept:** {rm.intercept:.2f}") [cite: 41, 84]
+        [cite_start]st.write(f"**R² Score:** {rm.r2:.2f}") [cite: 41, 84]
+        
+        [cite_start]with st.expander("Educational Note"): [cite: 42, 57]
+            st.write("Linear regression finds the 'best-fit' line by minimizing the sum of squared differences between observed and predicted values.")
+
+if __name__ == "__main__":
+    [cite_start]main() [cite: 15]
