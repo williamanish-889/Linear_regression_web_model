@@ -40,8 +40,10 @@ def main():
     # Load model
     model = DataHandler.load_model("linear_regression_model.pkl")
 
-    if model is not None:
-        engine = RegressionEngine(model)
+    if model is None:
+        st.error("Model failed to load.")
+        st.stop()
+
 
         # User input
         study_hours = st.number_input(
