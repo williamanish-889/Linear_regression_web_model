@@ -40,24 +40,43 @@ def main():
     # Load model
     model = DataHandler.load_model("linear_regression_model.pkl")
 
+    st.write("Model loaded:", model is not None)
+
     if model is None:
-        st.error("Model failed to load.")
         st.stop()
 
+    engine = RegressionEngine(model)
 
-        # User input
-        study_hours = st.number_input(
-            "Enter Study Hours:",
-            min_value=0.0,
-            max_value=24.0,
-            value=5.0,
-            step=0.5
-        )
+    study_hours = st.number_input(
+        "Enter Study Hours:",
+        min_value=0.0,
+        max_value=24.0,
+        value=5.0,
+        step=0.5
+    )
 
-        if st.button("Predict Score"):
-            prediction = engine.predict(study_hours)
+    if st.button("Predict Score"):
+        prediction = engine.predict(study_hours)
+        st.success(f"Predicted Test Score: {prediction:.2f}")
+            
+        
+            st.subheader("Prediction Graph")
 
-            st.success(f"### Predicted Test Score: {prediction:.2f}")
+            # Generate range of study hours
+            x_range = np.linspace(0, 24, 100).reshape(-1, 1)
+            y_range = model.predict(x_range)
+
+            # Plot
+            fig, ax = plt.subplots()
+            ax.plot(x_range, y_range, label="Regression Line")
+            ax.scatter(study_hours, prediction, color="red", label="Your Prediction", s=100)
+
+            ax.set_xlabel("Study Hours")
+            ax.set_ylabel("Predicted Score")
+            ax.set_title("Study Hours vs Predicted Score")
+            ax.legend()
+
+            st.pyplot(fig)
 
             # Model insights
             st.subheader("Model Insights")
