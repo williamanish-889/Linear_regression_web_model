@@ -56,37 +56,38 @@ def main():
     )
 
     if st.button("Predict Score"):
+        
         prediction = engine.predict(study_hours)
         st.success(f"Predicted Test Score: {prediction:.2f}")
             
         
-            st.subheader("Prediction Graph")
+        st.subheader("Prediction Graph")
 
-            # Generate range of study hours
-            x_range = np.linspace(0, 24, 100).reshape(-1, 1)
-            y_range = model.predict(x_range)
+        # Generate range of study hours
+        x_range = np.linspace(0, 24, 100).reshape(-1, 1)
+        y_range = model.predict(x_range)
 
-            # Plot
-            fig, ax = plt.subplots()
-            ax.plot(x_range, y_range, label="Regression Line")
-            ax.scatter(study_hours, prediction, color="red", label="Your Prediction", s=100)
+        # Plot
+        fig, ax = plt.subplots()
+        ax.plot(x_range, y_range, label="Regression Line")
+        ax.scatter(study_hours, prediction, color="red", label="Your Prediction", s=100)
 
-            ax.set_xlabel("Study Hours")
-            ax.set_ylabel("Predicted Score")
-            ax.set_title("Study Hours vs Predicted Score")
-            ax.legend()
+        ax.set_xlabel("Study Hours")
+        ax.set_ylabel("Predicted Score")
+        ax.set_title("Study Hours vs Predicted Score")
+        ax.legend()
 
-            st.pyplot(fig)
+        st.pyplot(fig)
 
-            # Model insights
-            st.subheader("Model Insights")
-            col1, col2 = st.columns(2)
+        # Model insights
+        st.subheader("Model Insights")
+        col1, col2 = st.columns(2)
 
-            with col1:
-                st.metric("Model Slope (Coefficient)", f"{model.coef_[0]:.2f}")
+        with col1:
+            st.metric("Model Slope (Coefficient)", f"{model.coef_[0]:.2f}")
 
-            with col2:
-                st.metric("Model Intercept", f"{model.intercept_:.2f}")
+        with col2:
+            st.metric("Model Intercept", f"{model.intercept_:.2f}")
 
         # Explanation
         with st.expander("How does this work?"):
